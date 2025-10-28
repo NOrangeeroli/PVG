@@ -133,6 +133,7 @@ class PersistentWorkerPool:
         max_model_len: int = 4096,
         enable_timing: bool = True,
         worker_batch_size: int = 8,
+        show_progress: bool = True,
     ):
         self.num_workers = num_workers
         self.model_name = model_name
@@ -142,6 +143,7 @@ class PersistentWorkerPool:
         self.max_model_len = max_model_len
         self.enable_timing = enable_timing
         self.worker_batch_size = worker_batch_size
+        self.show_progress = show_progress
 
         # Communication queues
         self.task_queue = Queue()
@@ -171,6 +173,7 @@ class PersistentWorkerPool:
                     self.max_num_seqs,
                     self.max_model_len,
                     self.enable_timing,
+                    self.show_progress,
                     self.task_queue,
                     self.result_queue,
                     self.shutdown_event,
@@ -241,11 +244,15 @@ class PersistentWorkerPool:
         max_num_seqs: int,
         max_model_len: int,
         enable_timing: bool,
+        show_progress: bool,
         task_queue: Queue,
         result_queue: Queue,
         shutdown_event: Event,
     ):
         os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
+        if not show_progress:
+            # Disable tqdm progress bars inside this worker process
+            os.environ["TQDM_DISABLE"] = "1"
         logger.info(f"Persistent worker {worker_id} starting on GPU {gpu_id}")
 
         init_start = time.time() if enable_timing else None
