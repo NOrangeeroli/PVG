@@ -31,6 +31,13 @@ This directory contains comprehensive documentation for the PVG-Legibility proje
 git clone https://github.com/your-org/pvg-legibility.git
 cd pvg-legibility
 
+# Create conda environment with CUDA 12.4
+conda create -n pvg python=3.10
+conda activate pvg
+
+# Install CUDA 12.4 toolkit
+conda install -c nvidia cuda-toolkit=12.4.0
+
 # Install dependencies
 pip install -r requirements.txt
 pip install -e .
@@ -42,7 +49,10 @@ pip install -e .
 # Prepare data
 python scripts/prepare_gsm8k.py --output-dir data/gsm8k
 
-# Train one round
+# Quick test (recommended for first run)
+python scripts/run_round.py --config configs/quick_test.yaml --data-dir data/gsm8k --output-dir outputs/round_001
+
+# Full training
 python scripts/run_round.py --config configs/default.yaml --data-dir data/gsm8k --output-dir outputs/round_001
 
 # Evaluate
@@ -59,6 +69,13 @@ for round in {1..5}; do
     --data-dir data/gsm8k \
     --output-dir outputs/round_$(printf "%03d" $round)
 done
+
+# Multi-GPU training (recommended for large models)
+python scripts/run_round.py \
+  --config configs/multi_gpu.yaml \
+  --data-dir data/gsm8k \
+  --output-dir outputs/round_001 \
+  --multi-gpu
 
 # Attack evaluation
 python scripts/attack_sneaky_only.py \
@@ -79,8 +96,29 @@ The default configuration (`configs/default.yaml`) provides a good starting poin
 - **SRC Reward**: `configs/experiments.yaml:src_experiment`
 - **CGC Reward**: `configs/experiments.yaml:cgc_experiment`
 - **Goodharting**: `configs/experiments.yaml:goodhart_experiment`
+- **Multi-GPU**: `configs/multi_gpu.yaml` (optimized for multi-GPU setups)
+- **Quick Test**: `configs/quick_test.yaml` (for rapid development and testing)
 
-### 3. Custom Configuration
+### 3. Testing Configuration
+
+For quick testing and development, use the testing settings:
+
+```yaml
+# configs/quick_test.yaml
+testing:
+  max_problems: 20  # Limit total problems
+  max_verifier_problems: 10  # Limit verifier training problems
+  max_prover_problems: 10  # Limit prover training problems
+  quick_test: true  # Enable quick test mode
+```
+
+**Testing Options**:
+- `max_problems`: Limit total dataset size
+- `max_verifier_problems`: Specific limit for verifier training
+- `max_prover_problems`: Specific limit for prover training  
+- `quick_test`: Enable automatic small limits (20 total, 10 each)
+
+### 4. Custom Configuration
 
 Create your own configuration by extending the default:
 
@@ -265,9 +303,50 @@ human_results = human_evaluator.evaluate_batch(problems, solutions, ground_truth
 - Increase batch size
 - Use mixed precision
 - Enable compilation
-- Use multiple GPUs
+- Use multiple GPUs (see Multi-GPU section below)
 
-### 3. Debugging
+### 3. Multi-GPU Training
+
+**Automatic GPU Detection**:
+The system automatically detects available GPUs and optimizes for multi-GPU training.
+
+**Basic Multi-GPU Usage**:
+```bash
+# Use multi-GPU configuration
+python scripts/run_round.py \
+  --config configs/multi_gpu.yaml \
+  --data-dir data/gsm8k \
+  --output-dir outputs/round_001 \
+  --multi-gpu
+```
+
+**Multi-GPU Features**:
+- **VLLM Integration**: Fast sampling with tensor parallelism across all GPUs
+- **DataParallel Training**: Both verifier and prover training use multiple GPUs
+- **Automatic Optimization**: Larger batch sizes and memory utilization
+- **Progress Monitoring**: Real-time GPU utilization tracking
+
+**Configuration Options**:
+```yaml
+# configs/multi_gpu.yaml
+verifier:
+  sampling:
+    tensor_parallel_size: null  # Auto-detect all GPUs
+    gpu_memory_utilization: 0.9  # Use 90% of GPU memory
+    batch_size: 16  # Larger batch size for multi-GPU
+  batch_size: 16  # Larger training batch size
+
+prover:
+  model: "Qwen/Qwen3-8B"  # Larger model for multi-GPU
+```
+
+**Performance Benefits**:
+- **8x Faster Sampling**: VLLM tensor parallelism across all GPUs
+- **4-6x Faster Training**: DataParallel for both verifier and prover
+- **Larger Models**: Can handle models up to 6+ GB per GPU
+- **Higher Throughput**: Massive parallel processing capability
+
+### 4. Debugging
 
 **Enable Debug Logging**:
 ```bash
