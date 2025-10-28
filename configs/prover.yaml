@@ -1,0 +1,46 @@
+# Prover-specific configuration
+
+# Override default prover settings
+prover:
+  model: "meta-llama/Meta-Llama-3-8B-Instruct"
+  use_peft: true
+  peft_config:
+    r: 32  # Higher rank for more capacity
+    lora_alpha: 64
+    target_modules: ["q_proj", "v_proj", "k_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
+    lora_dropout: 0.05
+    bias: "none"
+    task_type: "CAUSAL_LM"
+  use_quantization: false
+  generation_config:
+    do_sample: true
+    temperature: 0.8
+    top_p: 0.95
+    max_new_tokens: 512
+    repetition_penalty: 1.1
+
+# RL configuration for prover
+rl:
+  reward: "src"
+  kl_beta: 0.01  # Lower KL penalty
+  entropy_coef: 0.02  # Higher entropy bonus
+  batch_size: 16
+  mini_batch_size: 8
+  ppo_epochs: 4
+  learning_rate: 5e-6  # Lower learning rate
+  max_grad_norm: 0.5
+  num_epochs: 4
+  max_new_tokens: 512
+  temperature: 0.8
+  top_p: 0.95
+
+# Training configuration
+training:
+  num_rounds: 8
+  save_every_round: true
+  eval_every_round: true
+  early_stopping: true
+  patience: 2
+  mixed_precision: true
+  gradient_accumulation_steps: 2
+  max_grad_norm: 0.5

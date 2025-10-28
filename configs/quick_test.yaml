@@ -1,0 +1,32 @@
+# Quick test configuration for rapid development
+defaults:
+  - default
+  - _self_
+
+# Override with quick test settings
+testing:
+  max_problems: 20  # Very small dataset for quick testing
+  max_verifier_problems: 10  # 10 problems for verifier training
+  max_prover_problems: 10  # 10 problems for prover training
+  quick_test: true
+
+# Reduce training parameters for speed
+verifier:
+  num_epochs: 1  # Only 1 epoch for quick test
+  batch_size: 4  # Smaller batch size
+  sampling:
+    k_per_role: 2  # Only 2 solutions per role per problem
+    max_samples: 5  # Fewer sampling attempts
+
+rl:
+  num_epochs: 1  # Only 1 epoch for quick test
+  batch_size: 4  # Smaller batch size
+  ppo_epochs: 1  # Only 1 PPO epoch
+
+# Reduce model sizes for speed
+prover:
+  model: "Qwen/Qwen2.5-0.5B"  # Smaller model for quick test
+  use_quantization: true  # Use quantization to save memory
+
+verifier:
+  model: "Qwen/Qwen2.5-0.5B"  # Same small model

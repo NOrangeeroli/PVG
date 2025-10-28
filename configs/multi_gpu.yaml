@@ -1,0 +1,81 @@
+# Multi-GPU configuration for PVG training
+# This configuration optimizes for multi-GPU setups
+
+# Prover configuration
+prover:
+  model: "Qwen/Qwen2.5-0.5B" 
+  use_peft: true
+  peft_config:
+    r: 16
+    lora_alpha: 32
+    lora_dropout: 0.1
+    target_modules: ["q_proj", "v_proj"]
+  generation:
+    do_sample: true
+    temperature: 0.7
+    top_p: 0.9
+    max_new_tokens: 512
+
+# Verifier configuration with multi-GPU sampling
+verifier:
+  model: "Qwen/Qwen2.5-0.5B"  # Smaller model for verifier
+  num_classes: 2
+  dropout_rate: 0.1
+  freeze_base: false
+  max_length: 512
+  learning_rate: 2e-5
+  weight_decay: 0.01
+  warmup_steps: 100
+  num_epochs: 3
+  batch_size: 16  # Larger batch size for multi-GPU
+  early_stopping_patience: 3
+  sampling:
+    k_per_role: 2  # Reduced from 3 to be more achievable
+    max_tries_per_task: 5  # Maximum number of attempts per task before giving up
+    cache_dir: "data/verifier_samples"
+    use_cached: true
+    use_fast_sampling: true
+    batch_size_per_device: 4  # Batch size per GPU device
+    data_parallel_size: 3  # Use 3 VLLM workers for data parallelism
+    gpu_memory_utilization: 0.05 # Very conservative memory usage (2.2 GiB per GPU)
+    gpu_ids: [2, 3, 4]  # GPUs for VLLM instances (must match data_parallel_size)
+    avoid_conflicts: true  # Check for GPU conflicts before using
+
+# Reinforcement Learning configuration
+rl:
+  reward: "src"
+  kl_beta: 0.02
+  num_epochs: 5  # More epochs for better convergence
+  batch_size: 16  # Larger batch size for multi-GPU
+  learning_rate: 1e-5
+  clip_range: 0.2
+  vf_coef: 0.5
+  ent_coef: 0.01
+
+# Data configuration
+data:
+  train_split: 0.8
+  val_split: 0.1
+  test_split: 0.1
+  max_length: 512
+
+# Testing/Development configuration
+testing:
+  max_problems: 10  # null for full dataset, or set to limit (e.g., 10, 50, 100)
+  max_verifier_problems: 5  # specific limit for verifier training
+  max_prover_problems: 5  # specific limit for prover training
+  quick_test: true  # if true, uses very small limits for quick testing
+
+# Evaluation configuration
+eval:
+  metrics: ["accuracy", "f1", "precision", "recall"]
+  best_of_n: 5
+  human_eval: false
+
+# Logging configuration
+logging:
+  level: "INFO"
+  wandb:
+    project: "pvg-multi-gpu"
+    entity: null
+    tags: ["multi-gpu", "vllm", "fast-sampling"]

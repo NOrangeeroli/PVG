@@ -1,0 +1,133 @@
+# Default configuration for PVG training
+
+# Prover configuration
+prover:
+  model: "Qwen/Qwen2.5-7B"
+  device: "auto"
+  torch_dtype: "float16"
+  use_peft: true
+  peft_config:
+    r: 16
+    lora_alpha: 32
+    target_modules: ["q_proj", "v_proj", "k_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
+    lora_dropout: 0.1
+    bias: "none"
+    task_type: "CAUSAL_LM"
+  use_quantization: false
+  quantization_config:
+    load_in_4bit: true
+    bnb_4bit_quant_type: "nf4"
+    bnb_4bit_compute_dtype: "float16"
+    bnb_4bit_use_double_quant: true
+  generation_config:
+    do_sample: true
+    temperature: 0.7
+    top_p: 0.9
+    max_new_tokens: 512
+
+# Verifier configuration
+verifier:
+  model: "Qwen/Qwen2.5-0.5B"
+  num_classes: 2
+  dropout_rate: 0.1
+  freeze_base: false
+  max_length: 512
+  learning_rate: 2e-5
+  weight_decay: 0.01
+  warmup_steps: 100
+  num_epochs: 3
+  batch_size: 8
+  early_stopping_patience: 3
+  sampling:
+    k_per_role: 5  # number of solutions per role per problem
+    max_tries_per_task: 10  # maximum number of attempts per task before giving up
+    cache_dir: "data/verifier_samples"  # directory to cache sampled solutions
+    use_cached: true  # whether to use cached samples
+    use_fast_sampling: true  # whether to use VLLM for fast sampling
+    batch_size_per_device: 8  # batch size per device for fast sampling
+    data_parallel_size: null  # number of GPUs for data parallelism (null = single GPU)
+    gpu_memory_utilization: 0.8  # fraction of GPU memory to use
+    gpu_ids: null  # specific GPUs to use (null = use all available)
+  # GPU for coordination (null = use default)
+    avoid_conflicts: false  # check for GPU conflicts before using
+
+# Reinforcement Learning configuration
+rl:
+  reward: "src"  # "src", "cgc", "goodhart"
+  kl_beta: 0.02
+  entropy_coef: 0.01
+  batch_size: 8
+  mini_batch_size: 4
+  ppo_epochs: 3
+  learning_rate: 1e-5
+  max_grad_norm: 1.0
+  num_epochs: 3
+  max_new_tokens: 512
+  temperature: 0.7
+  top_p: 0.9
+
+# Data configuration
+data:
+  train_size: 1000
+  val_size: 200
+  test_size: 200
+  subset_size: null  # null for full dataset
+  random_seed: 42
+  data_dir: "data/gsm8k"
+  output_dir: "outputs"
+
+# Testing/Development configuration
+testing:
+  max_problems: null  # null for full dataset, or set to limit (e.g., 10, 50, 100)
+  max_verifier_problems: null  # specific limit for verifier training
+  max_prover_problems: null  # specific limit for prover training
+  quick_test: false  # if true, uses very small limits for quick testing
+
+# Evaluation configuration
+eval:
+  n_values: [1, 5, 10, 20, 50, 100]
+  max_attempts: 10
+  time_limit: 45.0
+  device: "cuda"
+  save_results: true
+
+# Logging configuration
+logging:
+  level: "INFO"
+  save_every: 1
+  eval_every: 1
+  use_wandb: false
+  use_mlflow: false
+  project_name: "pvg-legibility"
+  experiment_name: "default"
+
+# Training configuration
+training:
+  num_rounds: 5
+  save_every_round: true
+  eval_every_round: true
+  early_stopping: false
+  patience: 3
+  random_seed: 42
+  device: "cuda"
+  mixed_precision: true
+  gradient_accumulation_steps: 1
+  max_grad_norm: 1.0
+
+# Attack configuration
+attacks:
+  reward_types: ["src", "cgc", "goodhart"]
+  max_attempts: 10
+  temperature: 0.7
+  top_p: 0.9
+  max_new_tokens: 512
+  success_threshold: 0.5
+  confidence_threshold: 0.8
+
+# Human evaluation configuration
+human_eval:
+  time_limit: 45.0
+  confidence_threshold: 0.5
+  max_samples: 100
+  evaluator_id: "proxy"
+  save_results: true

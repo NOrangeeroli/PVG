@@ -1,0 +1,193 @@
+# Experiment configurations
+
+# SRC reward experiment
+src_experiment:
+  defaults:
+    - default
+    - _self_
+  
+  rl:
+    reward: "src"
+    kl_beta: 0.02
+    entropy_coef: 0.01
+  
+  logging:
+    experiment_name: "src_reward"
+
+# CGC reward experiment
+cgc_experiment:
+  defaults:
+    - default
+    - _self_
+  
+  rl:
+    reward: "cgc"
+    kl_beta: 0.02
+    entropy_coef: 0.01
+  
+  logging:
+    experiment_name: "cgc_reward"
+
+# Goodharting experiment
+goodhart_experiment:
+  defaults:
+    - default
+    - _self_
+  
+  rl:
+    reward: "goodhart"
+    kl_beta: 0.0  # No KL penalty for goodharting
+    entropy_coef: 0.0
+  
+  logging:
+    experiment_name: "goodhart_reward"
+
+# Large prover experiment
+large_prover_experiment:
+  defaults:
+    - default
+    - prover
+    - _self_
+  
+  prover:
+    model: "meta-llama/Meta-Llama-3-70B-Instruct"
+    use_quantization: true
+    quantization_config:
+      load_in_4bit: true
+      bnb_4bit_quant_type: "nf4"
+      bnb_4bit_compute_dtype: "float16"
+      bnb_4bit_use_double_quant: true
+  
+  rl:
+    batch_size: 4
+    mini_batch_size: 2
+    learning_rate: 1e-6
+  
+  logging:
+    experiment_name: "large_prover"
+
+# Small verifier experiment
+small_verifier_experiment:
+  defaults:
+    - default
+    - verifier
+    - _self_
+  
+  verifier:
+    model: "microsoft/DialoGPT-small"
+    num_classes: 2
+    dropout_rate: 0.3
+    learning_rate: 5e-6
+    num_epochs: 3
+    batch_size: 8
+  
+  logging:
+    experiment_name: "small_verifier"
+
+# High capacity experiment
+high_capacity_experiment:
+  defaults:
+    - default
+    - prover
+    - verifier
+    - _self_
+  
+  prover:
+    peft_config:
+      r: 64
+      lora_alpha: 128
+      lora_dropout: 0.0
+  
+  verifier:
+    dropout_rate: 0.1
+    learning_rate: 1e-5
+    num_epochs: 6
+  
+  rl:
+    kl_beta: 0.005
+    entropy_coef: 0.05
+    batch_size: 32
+    mini_batch_size: 16
+  
+  logging:
+    experiment_name: "high_capacity"
+
+# Ablation experiments
+ablation_no_kl:
+  defaults:
+    - default
+    - _self_
+  
+  rl:
+    kl_beta: 0.0
+  
+  logging:
+    experiment_name: "ablation_no_kl"
+
+ablation_no_entropy:
+  defaults:
+    - default
+    - _self_
+  
+  rl:
+    entropy_coef: 0.0
+  
+  logging:
+    experiment_name: "ablation_no_entropy"
+
+ablation_no_peft:
+  defaults:
+    - default
+    - _self_
+  
+  prover:
+    use_peft: false
+  
+  logging:
+    experiment_name: "ablation_no_peft"
+
+# Multi-round experiments
+multi_round_experiment:
+  defaults:
+    - default
+    - _self_
+  
+  training:
+    num_rounds: 10
+    save_every_round: true
+    eval_every_round: true
+    early_stopping: true
+    patience: 3
+  
+  logging:
+    experiment_name: "multi_round"
+
+# Attack experiments
+attack_experiment:
+  defaults:
+    - default
+    - _self_
+  
+  attacks:
+    reward_types: ["src", "cgc", "goodhart"]
+    max_attempts: 20
+    success_threshold: 0.7
+    confidence_threshold: 0.9
+  
+  logging:
+    experiment_name: "attack_focused"
+
+# Human evaluation experiment
+human_eval_experiment:
+  defaults:
+    - default
+    - _self_
+  
+  human_eval:
+    time_limit: 30.0
+    confidence_threshold: 0.7
+    max_samples: 200
+    save_results: true
+  
+  logging:
+    experiment_name: "human_eval"

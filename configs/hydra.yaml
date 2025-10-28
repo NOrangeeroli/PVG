@@ -1,0 +1,82 @@
+# Hydra configuration
+
+defaults:
+  - default
+
+# Command line overrides
+# @package _global_
+
+# Hydra settings
+hydra:
+  run:
+    dir: outputs/${now:%Y-%m-%d_%H-%M-%S}
+  
+  job:
+    chdir: true
+  
+  sweep:
+    dir: outputs/sweeps/${now:%Y-%m-%d_%H-%M-%S}
+    subdir: ${hydra.job.num}
+  
+  callbacks:
+    default_callback:
+      _target_: hydra.core.utils.JobReturnCallback
+      _partial_: true
+  
+  job_logging:
+    version: 1
+    disable_existing_loggers: false
+    formatters:
+      simple:
+        format: '[%(asctime)s][%(name)s][%(levelname)s] - %(message)s'
+      detailed:
+        format: '[%(asctime)s][%(name)s][%(levelname)s] - %(message)s'
+    
+    handlers:
+      console:
+        class: logging.StreamHandler
+        level: INFO
+        formatter: simple
+        stream: ext://sys.stdout
+      
+      file:
+        class: logging.FileHandler
+        level: DEBUG
+        formatter: detailed
+        filename: ${hydra:runtime.cwd}/logs/training.log
+        mode: w
+    
+    loggers:
+      pvg_core:
+        level: DEBUG
+        handlers: [console, file]
+        propagate: false
+      
+      transformers:
+        level: WARNING
+        handlers: [console]
+        propagate: false
+      
+      torch:
+        level: WARNING
+        handlers: [console]
+        propagate: false
+    
+    root:
+      level: INFO
+      handlers: [console, file]
+
+# Path configuration
+paths:
+  data_dir: data/gsm8k
+  output_dir: outputs
+  model_dir: outputs/models
+  log_dir: outputs/logs
+  cache_dir: .cache
+
+# Environment variables
+env:
+  CUDA_VISIBLE_DEVICES: "0"
+  TOKENIZERS_PARALLELISM: "false"
+  TRANSFORMERS_CACHE: ".cache/transformers"
+  HF_HOME: ".cache/huggingface"

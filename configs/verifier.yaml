@@ -1,0 +1,41 @@
+# Verifier-specific configuration
+
+# Override default verifier settings
+verifier:
+  model: "TinyLlama/TinyLlama-1.1B-intermediate-step-1431k-503b"
+  num_classes: 2
+  dropout_rate: 0.2  # Higher dropout for regularization
+  freeze_base: false
+  max_length: 1024  # Longer sequences
+  learning_rate: 1e-5  # Lower learning rate
+  weight_decay: 0.05  # Higher weight decay
+  warmup_steps: 200
+  num_epochs: 5  # More epochs
+  batch_size: 16  # Larger batch size
+  early_stopping_patience: 5
+  class_weights: [1.0, 1.0]  # Balanced classes
+  use_focal_loss: false
+  focal_alpha: 0.25
+  focal_gamma: 2.0
+
+# Training configuration
+training:
+  num_rounds: 10
+  save_every_round: true
+  eval_every_round: true
+  early_stopping: true
+  patience: 3
+  mixed_precision: true
+  gradient_accumulation_steps: 1
+  max_grad_norm: 1.0
+
+# Evaluation configuration
+eval:
+  n_values: [1, 3, 5, 10, 20, 50, 100]
+  max_attempts: 15
+  time_limit: 30.0
+  device: "cuda"
+  save_results: true
+  calculate_ece: true
+  calculate_mce: true
+  n_bins: 10
