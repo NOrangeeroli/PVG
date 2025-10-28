@@ -36,9 +36,9 @@ verifier:
     use_cached: true
     use_fast_sampling: true
     batch_size_per_device: 4  # Batch size per GPU device
-    data_parallel_size: 3  # Use 3 VLLM workers for data parallelism
-    gpu_memory_utilization: 0.5 # Very conservative memory usage (2.2 GiB per GPU)
-    gpu_ids: [2, 3, 4]  # GPUs for VLLM instances (must match data_parallel_size)
+    data_parallel_size: 1  # Use 3 VLLM workers for data parallelism
+    gpu_memory_utilization: 0.1 # Very conservative memory usage (2.2 GiB per GPU)
+    gpu_ids: [6]  # GPUs for VLLM instances (must match data_parallel_size)
     avoid_conflicts: true  # Check for GPU conflicts before using
 
 # Reinforcement Learning configuration
