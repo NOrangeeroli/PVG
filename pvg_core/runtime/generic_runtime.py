@@ -9,7 +9,7 @@ from multiprocessing import Process, set_start_method, Queue, Event
 from vllm import LLM, SamplingParams
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+# logger.setLevel(logging.INFO)
 
 
 # Ensure CUDA-safe start method for multiprocessing
