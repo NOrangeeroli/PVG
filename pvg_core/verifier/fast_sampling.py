@@ -5,6 +5,7 @@ https://vllm.website.cncfstack.com/examples/offline_inference/data_parallel.html
 
 import os
 import logging
+from tqdm import tqdm
 import json
 import tempfile
 import time
@@ -144,10 +145,16 @@ def fast_sample_solutions_for_verifier(
         gpu_ids=gpu_ids,
         gpu_memory_utilization=gpu_memory_utilization,
         enable_timing=enable_timing,
-        worker_batch_size=task_batch_size
+        worker_batch_size=task_batch_size,
+        show_progress=False
     )
     
     try:
+        # Progress bar tracking successful tasks over all initial tasks
+        total_initial_tasks = task_queue.task_counter
+        pbar = tqdm(total=total_initial_tasks, desc="Successful tasks", leave=True)
+        pbar.update(0)
+
         # Start persistent workers
         worker_pool.start_workers()
         
@@ -209,11 +216,21 @@ def fast_sample_solutions_for_verifier(
             # Success rates by role are now tracked outside TaskQueue; omitted here
             if enable_timing:
                 logger.info(f"  - Batch time: {iteration_time:.2f}s")
+
+            # Update progress bar with new successful count
+            current_completed = status['completed_solutions']
+            if pbar.n < current_completed:
+                pbar.update(current_completed - pbar.n)
+            pbar.set_postfix_str(f"{current_completed}/{total_initial_tasks}")
             
     
     finally:
         # Always shutdown workers
         worker_pool.shutdown()
+        try:
+            pbar.close()
+        except Exception:
+            pass
     
     # Final status
     final_status = task_queue.get_status()
