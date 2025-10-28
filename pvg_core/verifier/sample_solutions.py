@@ -23,8 +23,7 @@ try:
 except ImportError:
     FAST_SAMPLING_AVAILABLE = False
 
-# Simple data parallel sampling is now part of fast_sampling.py
-SIMPLE_DP_AVAILABLE = FAST_SAMPLING_AVAILABLE
+
 
 logger = logging.getLogger(__name__)
 
@@ -284,42 +283,9 @@ def sample_solutions_for_verifier(
     """
     logger.info("Sampling solutions for verifier training (round %d)", round_num)
     logger.info("Target: %d solutions per role per problem", k_per_role)
-    
-    # Try simple data parallel sampling first if available and enabled
-    if use_fast_sampling and SIMPLE_DP_AVAILABLE and data_parallel_size and data_parallel_size > 1:
-        logger.info("Using simple data parallel sampling with VLLM")
-        try:
-            # Use provided model name or try to extract from prover_model
-            if prover_model_name:
-                model_name = prover_model_name
-                logger.info("Using provided model name: %s", model_name)
-            elif hasattr(prover_model, 'config') and hasattr(prover_model.config, 'name_or_path'):
-                model_name = prover_model.config.name_or_path
-            elif hasattr(prover_model, 'config') and hasattr(prover_model.config, '_name_or_path'):
-                model_name = prover_model.config._name_or_path
-            else:
-                # Fallback: try to get from the model's class or use a default
-                model_name = getattr(prover_model, '__class__', {}).__name__ if hasattr(prover_model, '__class__') else 'unknown'
-                logger.warning("Could not determine model name from config, using: %s", model_name)
-            
-            return fast_sample_solutions_for_verifier(
-                problems=problems,
-                prover_model_name=model_name,
-                k_per_role=k_per_role,
-                round_num=round_num,
-                data_parallel_size=data_parallel_size,
-                gpu_memory_utilization=gpu_memory_utilization,
-                gpu_ids=gpu_ids,
-                max_tries_per_task=max_tries_per_task,
-                output_dir=output_dir,
-            )
-        except Exception as e:
-            logger.error("Fast sampling failed: %s", e)
-            logger.error("Falling back to standard sampling is disabled for debugging")
-            raise Exception(f"Fast sampling failed and fallback is disabled: {e}")
-    
+
     # Try complex fast sampling as fallback
-    elif use_fast_sampling and FAST_SAMPLING_AVAILABLE:
+    if use_fast_sampling and FAST_SAMPLING_AVAILABLE:
         logger.info("Using complex fast sampling with VLLM")
         try:
             # Use provided model name or try to extract from prover_model
